@@ -251,6 +251,302 @@ function PageDashboard(){
   );
 }
 
+
+function FormClienteExtra({empresa,initial,onSave,onClose}){
+  const EF={contacto:"",cargo:"",tel:"",email:"",ciudad:"",rubro:"Otro",origen:"Directo",estado:"Activo",notas:""};
+  const[f,setF]=useState(initial||EF);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{padding:"12px 16px",background:"rgba(16,185,129,.06)",border:"1px solid rgba(16,185,129,.15)",borderRadius:10,marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
+        <Av name={empresa} size={40}/><div><p style={{color:"#f1f5f9",fontWeight:700,fontSize:14,margin:0}}>{empresa}</p><p style={{color:"#64748b",fontSize:12,margin:"3px 0 0"}}>Todos los campos son opcionales</p></div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)} placeholder="Nombre apellido"/></Fld>
+        <Fld label="Cargo" hint><I value={f.cargo} onChange={e=>set("cargo",e.target.value)} placeholder="Gerente, Compras..."/></Fld>
+        <Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)} placeholder="11 1234-5678"/></Fld>
+        <Fld label="Email" hint><I type="email" value={f.email} onChange={e=>set("email",e.target.value)} placeholder="mail@empresa.com"/></Fld>
+        <Fld label="Ciudad" hint><I value={f.ciudad} onChange={e=>set("ciudad",e.target.value)} placeholder="Buenos Aires..."/></Fld>
+        <Fld label="Rubro" hint><S value={f.rubro} onChange={e=>set("rubro",e.target.value)}>{RUBROS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Origen" hint><S value={f.origen} onChange={e=>set("origen",e.target.value)}>{ORIGENES.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Estado" hint><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{"Activo,Inactivo,Prospecto,Suspendido".split(",").map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="Observaciones..."/></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>onSave(f)}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function FormProveedor({initial,onSave,onClose}){
+  const[f,setF]=useState(initial||EP);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Nombre *" s2><I value={f.nombre} onChange={e=>set("nombre",e.target.value)}/></Fld>
+        <Fld label="CUIT" hint><I value={f.cuit} onChange={e=>set("cuit",e.target.value)} placeholder="30-00000000-0"/></Fld>
+        <Fld label="Categoría"><S value={f.categoria} onChange={e=>set("categoria",e.target.value)}>{CATS_PROV.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Cond. de pago"><S value={f.condPago} onChange={e=>set("condPago",e.target.value)}>{CONDS_PAGO.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_PROV.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)}/></Fld>
+        <Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)}/></Fld>
+        <Fld label="Email" hint><I value={f.email} onChange={e=>set("email",e.target.value)}/></Fld>
+        <Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)}/></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.nombre.trim())return;onSave({...f,id:f.id||uid()});}}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function FormFacturaProv({initial,provs,ventas,onSave,onClose}){
+  const[f,setF]=useState(initial||EFP);
+  const set=(k,v)=>setF(p=>{const n={...p,[k]:v};if(k==="montoNeto"||k==="iva"){const nt=pN(n.montoNeto)*(1+pN(n.iva)/100);n.total=nt.toFixed(2);}return n;});
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Proveedor *" s2><S value={f.proveedorId} onChange={e=>set("proveedorId",e.target.value)}><option value="">— Seleccioná —</option>{provs.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</S></Fld>
+        <Fld label="N° Factura" hint><I value={f.nroFactura} onChange={e=>set("nroFactura",e.target.value)} placeholder="00005-00012345"/></Fld>
+        <Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld>
+        <Fld label="Monto neto *"><I type="number" value={f.montoNeto} onChange={e=>set("montoNeto",e.target.value)}/></Fld>
+        <Fld label="IVA %"><S value={f.iva} onChange={e=>set("iva",e.target.value)}>{IVA_OPTS.map(x=><option key={x} value={x}>{x}%</option>)}</S></Fld>
+        <Fld label="Total (calculado)"><I value={$(f.total)} readOnly style={{opacity:.6}}/></Fld>
+        <Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_FC2.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Forma de pago"><S value={f.formaPago} onChange={e=>set("formaPago",e.target.value)}>{FORMAS_P.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="N° cheque / ref." hint><I value={f.nroCheque} onChange={e=>set("nroCheque",e.target.value)}/></Fld>
+        <Fld label="Fecha vencimiento" hint><I type="date" value={f.fechaVto} onChange={e=>set("fechaVto",e.target.value)}/></Fld>
+        <Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}{v.nroFactura?" · "+v.nroFactura:""}</option>)}</S></Fld>
+        <Fld label="Productos / detalle" hint s2><T value={f.productos} onChange={e=>set("productos",e.target.value)}/></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.proveedorId)return;onSave({...f,id:f.id||uid()});}}>Guardar factura</button>
+      </div>
+    </div>
+  );
+}
+
+function FormGasto({initial,ventas,onSave,onClose}){
+  const[f,setF]=useState(initial||EG);
+  const set=(k,v)=>setF(p=>{const n={...p,[k]:v};if(k==="montoNeto"||k==="iva"){n.total=(pN(n.montoNeto)*(1+pN(n.iva)/100)).toFixed(2);}return n;});
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld>
+        <Fld label="Categoría"><S value={f.categoria} onChange={e=>set("categoria",e.target.value)}>{CATS_GASTO.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Emisor *" s2><I value={f.emisor} onChange={e=>set("emisor",e.target.value)} placeholder="Nombre del emisor"/></Fld>
+        <Fld label="Monto neto *"><I type="number" value={f.montoNeto} onChange={e=>set("montoNeto",e.target.value)}/></Fld>
+        <Fld label="IVA %"><S value={f.iva} onChange={e=>set("iva",e.target.value)}>{IVA_OPTS.map(x=><option key={x} value={x}>{x}%</option>)}</S></Fld>
+        <Fld label="Total (calculado)"><I value={$(f.total)} readOnly style={{opacity:.6}}/></Fld>
+        <Fld label="Medio de pago"><S value={f.medioPago} onChange={e=>set("medioPago",e.target.value)}>{MEDIOS_G.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Responsable"><I value={f.responsable} onChange={e=>set("responsable",e.target.value)}/></Fld>
+        <Fld label="Descripción" s2><I value={f.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Detalle del gasto..."/></Fld>
+        <Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.emisor.trim()||!f.montoNeto)return;onSave({...f,id:f.id||uid()});}}>Guardar gasto</button>
+      </div>
+    </div>
+  );
+}
+
+function FormCheque({initial,ventas,onSave,onClose}){
+  const[f,setF]=useState(initial||ECH);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Tipo"><S value={f.tipo} onChange={e=>set("tipo",e.target.value)}>{T_CHEQUE.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="N° cheque *"><I value={f.nro} onChange={e=>set("nro",e.target.value)}/></Fld>
+        <Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld>
+        <Fld label="Emisor"><I value={f.emisor} onChange={e=>set("emisor",e.target.value)}/></Fld>
+        <Fld label="Beneficiario"><I value={f.beneficiario} onChange={e=>set("beneficiario",e.target.value)}/></Fld>
+        <Fld label="Fecha emisión"><I type="date" value={f.fechaEmision} onChange={e=>set("fechaEmision",e.target.value)}/></Fld>
+        <Fld label="Fecha vencimiento"><I type="date" value={f.fechaVto} onChange={e=>set("fechaVto",e.target.value)}/></Fld>
+        <Fld label="¿Endosado?"><S value={f.endosado} onChange={e=>set("endosado",e.target.value)}><option value="no">No</option><option value="si">Sí</option></S></Fld>
+        {f.endosado==="si"&&<Fld label="Endosado a"><I value={f.endosadoA} onChange={e=>set("endosadoA",e.target.value)}/></Fld>}
+        <Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.nro.trim()||!f.importe)return;onSave({...f,id:f.id||uid(),instrumento:"cheque"});}}>Guardar cheque</button>
+      </div>
+    </div>
+  );
+}
+
+function FormTransferencia({initial,ventas,onSave,onClose}){
+  const[f,setF]=useState(initial||ETR);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Tipo"><S value={f.subtipo} onChange={e=>set("subtipo",e.target.value)}><option value="cobro">↓ Cobro (entrada)</option><option value="pago">↑ Pago (salida)</option></S></Fld>
+        <Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld>
+        <Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld>
+        <Fld label={f.subtipo==="cobro"?"Pagado por *":"Pagado a *"}><I value={f.contraparte} onChange={e=>set("contraparte",e.target.value)}/></Fld>
+        <Fld label="Concepto" s2><I value={f.concepto} onChange={e=>set("concepto",e.target.value)} placeholder="Cobro FC..., Pago proveedor..."/></Fld>
+        <Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.contraparte.trim()||!f.importe)return;onSave({...f,id:f.id||uid(),instrumento:"transferencia"});}}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function FormCuenta({initial,onSave,onClose}){
+  const[f,setF]=useState(initial||EC);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Nombre *" s2><I value={f.nombre} onChange={e=>set("nombre",e.target.value)} placeholder="Ej: Cuenta Macro, FCI Balanz..."/></Fld>
+        <Fld label="Tipo"><S value={f.tipo} onChange={e=>set("tipo",e.target.value)}>{T_CUENTA.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Saldo actual *"><I type="number" value={f.saldo} onChange={e=>set("saldo",e.target.value)}/></Fld>
+        <Fld label="Fecha actualización"><I type="date" value={f.fechaActualizacion} onChange={e=>set("fechaActualizacion",e.target.value)}/></Fld>
+        <Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="CBU, alias..."/></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.nombre.trim())return;onSave({...f,id:f.id||uid()});}}>Guardar cuenta</button>
+      </div>
+    </div>
+  );
+}
+
+function FormMovimiento({initial,cuentas,ventas,onSave,onClose}){
+  const[f,setF]=useState(initial||EM);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld>
+        <Fld label="Tipo"><S value={f.tipo} onChange={e=>{const v=e.target.value;setF(p=>({...p,tipo:v,esEgreso:EGRESOS_MOV.includes(v)}))}}>{T_MOV.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Descripción *" s2><I value={f.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Cobro OSPESE FC 1151..."/></Fld>
+        <Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld>
+        <Fld label="Dirección">
+          <div style={{display:"flex",gap:8}}>
+            <button type="button" onClick={()=>set("esEgreso",false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${!f.esEgreso?VERDE:"rgba(255,255,255,.1)"}`,background:!f.esEgreso?"rgba(16,185,129,.12)":"transparent",color:!f.esEgreso?VERDE:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600}}>↓ Ingreso</button>
+            <button type="button" onClick={()=>set("esEgreso",true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${f.esEgreso?"#ef4444":"rgba(255,255,255,.1)"}`,background:f.esEgreso?"rgba(239,68,68,.1)":"transparent",color:f.esEgreso?ROJO:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600}}>↑ Egreso</button>
+          </div>
+        </Fld>
+        <Fld label="Cuenta" hint><S value={f.cuentaId} onChange={e=>set("cuentaId",e.target.value)}><option value="">— Sin especificar —</option>{cuentas.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}</S></Fld>
+        <Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.descripcion.trim()||!f.importe)return;onSave({...f,id:f.id||uid()});}}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function FormProyeccion({movs,onSave,onClose}){
+  const[items,setItems]=useState([{id:uid(),fecha:hoy(),descripcion:"",importe:"",esEgreso:false}]);
+  const addI=()=>setItems(p=>[...p,{id:uid(),fecha:hoy(),descripcion:"",importe:"",esEgreso:false}]);
+  const setI=(id,k,v)=>setItems(p=>p.map(x=>x.id===id?{...x,[k]:v}:x));
+  const remI=(id)=>setItems(p=>p.filter(x=>x.id!==id));
+  return(
+    <div>
+      <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Agregá ingresos y egresos futuros esperados.</p>
+      {items.map((it,idx)=>(
+        <div key={it.id} style={{background:"rgba(255,255,255,.03)",borderRadius:10,padding:14,marginBottom:10,border:"1px solid rgba(255,255,255,.06)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+            <span style={{fontSize:12,color:"#64748b",fontWeight:700}}>Ítem {idx+1}</span>
+            {items.length>1&&<button onClick={()=>remI(it.id)} style={{background:"transparent",border:"none",color:ROJO,cursor:"pointer",fontSize:12}}>✕ Quitar</button>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:10,alignItems:"end"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Fecha</label><I type="date" value={it.fecha} onChange={e=>setI(it.id,"fecha",e.target.value)}/></div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Descripción</label><I value={it.descripcion} onChange={e=>setI(it.id,"descripcion",e.target.value)} placeholder="Ej: Cobro THAR SA"/></div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Importe</label><I type="number" value={it.importe} onChange={e=>setI(it.id,"importe",e.target.value)}/></div>
+            <div style={{display:"flex",gap:6,paddingBottom:1}}>
+              <button type="button" onClick={()=>setI(it.id,"esEgreso",false)} style={{padding:"8px 10px",borderRadius:7,border:`1px solid ${!it.esEgreso?VERDE:"rgba(255,255,255,.1)"}`,background:!it.esEgreso?"rgba(16,185,129,.12)":"transparent",color:!it.esEgreso?VERDE:"#64748b",cursor:"pointer",fontSize:12,fontWeight:600}}>↓</button>
+              <button type="button" onClick={()=>setI(it.id,"esEgreso",true)} style={{padding:"8px 10px",borderRadius:7,border:`1px solid ${it.esEgreso?"#ef4444":"rgba(255,255,255,.1)"}`,background:it.esEgreso?"rgba(239,68,68,.1)":"transparent",color:it.esEgreso?ROJO:"#64748b",cursor:"pointer",fontSize:12,fontWeight:600}}>↑</button>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button onClick={addI} style={{width:"100%",padding:9,borderRadius:9,border:"1px dashed rgba(255,255,255,.12)",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:13,marginBottom:16}}>+ Agregar ítem</button>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>onSave(items.filter(x=>x.descripcion.trim()&&x.importe&&!isNaN(x.importe)))}>Agregar a proyección</button>
+      </div>
+    </div>
+  );
+}
+
+function FormCotizacion({initial,onSave,onClose}){
+  const[f,setF]=useState(initial||ECOT);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
+        <Fld label="Empresa *" s2><I value={f.empresa} onChange={e=>set("empresa",e.target.value)} placeholder="Nombre de la empresa"/></Fld>
+        <Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)}/></Fld>
+        <Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)} placeholder="11 1234-5678"/></Fld>
+        <Fld label="Email" hint><I type="email" value={f.email} onChange={e=>set("email",e.target.value)}/></Fld>
+        <Fld label="Producto / Servicio"><I value={f.producto} onChange={e=>set("producto",e.target.value)} placeholder="Qué se cotizó"/></Fld>
+        <Fld label="Vendedor"><I value={f.vendedor} onChange={e=>set("vendedor",e.target.value)}/></Fld>
+        <Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld>
+        <Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_COT.map(x=><option key={x}>{x}</option>)}</S></Fld>
+        <Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="Detalle, presupuesto, seguimiento..."/></Fld>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>{if(!f.empresa.trim())return;onSave({...f,id:f.id||uid()});}}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function FormComisionesConfig({initial,vendedores,onSave,onClose}){
+  const[cfg,setCfg]=useState({...initial});
+  const[nuevoVnd,setNuevoVnd]=useState("");
+  const[nuevoPct,setNuevoPct]=useState("");
+  const allVnd=[...new Set([...vendedores,...Object.keys(cfg)])];
+  return(
+    <div>
+      <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Definí el porcentaje de comisión para cada vendedor. Se aplica sobre el monto cobrado de cada venta.</p>
+      {allVnd.length===0&&<p style={{color:"#334155",fontSize:13,textAlign:"center",padding:"20px 0"}}>No hay vendedores registrados. Cargá ventas con el campo Vendedor completo.</p>}
+      {allVnd.map(vnd=>(
+        <div key={vnd} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+          <Av name={vnd} size={36}/>
+          <div style={{flex:1}}><p style={{fontSize:13,fontWeight:600,color:"#e2e8f0",margin:"0 0 2px"}}>{vnd}</p><p style={{fontSize:11,color:"#475569",margin:0}}>Vendedor</p></div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <I type="number" min="0" max="100" step="0.5" value={cfg[vnd]?.pct||""} onChange={e=>setCfg(p=>({...p,[vnd]:{...(p[vnd]||{}),pct:parseFloat(e.target.value)||0}}))} placeholder="0" style={{width:80,textAlign:"center"}}/>
+            <span style={{fontSize:14,color:"#64748b",fontWeight:600}}>%</span>
+          </div>
+        </div>
+      ))}
+      <div style={{marginTop:16,padding:"12px 14px",background:"rgba(255,255,255,.03)",borderRadius:10,border:"1px solid rgba(255,255,255,.06)"}}>
+        <p style={{fontSize:12,color:"#475569",margin:"0 0 8px",fontWeight:700,textTransform:"uppercase"}}>Agregar vendedor manualmente</p>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <I value={nuevoVnd} onChange={e=>setNuevoVnd(e.target.value)} placeholder="Nombre del vendedor" style={{flex:1}}/>
+          <I type="number" value={nuevoPct} onChange={e=>setNuevoPct(e.target.value)} placeholder="%" style={{width:70,textAlign:"center"}}/>
+          <button style={btnPri} onClick={()=>{if(!nuevoVnd.trim())return;setCfg(p=>({...p,[nuevoVnd.trim()]:{...(p[nuevoVnd.trim()]||{}),pct:parseFloat(nuevoPct)||0}}));setNuevoVnd("");setNuevoPct("");}}>+</button>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+        <button style={btnSec} onClick={onClose}>Cancelar</button>
+        <button style={btnPri} onClick={()=>onSave(cfg)}>Guardar configuración</button>
+      </div>
+    </div>
+  );
+}
 // ══════════════════════════════════════════════════════════════════
 // PAGE: VENTAS
 // ══════════════════════════════════════════════════════════════════
@@ -509,28 +805,7 @@ function PageClientes(){
       )}
       {modal==="edit"&&sel&&(
         <Mdl title="Datos de contacto" onClose={()=>setModal(null)}>
-          <div style={{padding:"12px 16px",background:"rgba(16,185,129,.06)",border:"1px solid rgba(16,185,129,.15)",borderRadius:10,marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
-            <Av name={sel.empresa} size={40}/><div><p style={{color:"#f1f5f9",fontWeight:700,fontSize:14,margin:0}}>{sel.empresa}</p><p style={{color:"#64748b",fontSize:12,margin:"3px 0 0"}}>Todos los campos son opcionales</p></div>
-          </div>
-          {(()=>{const[f,setF]=useState(sel.extra||EF);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(
-            <div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
-                <Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)} placeholder="Nombre apellido"/></Fld>
-                <Fld label="Cargo" hint><I value={f.cargo} onChange={e=>set("cargo",e.target.value)} placeholder="Gerente, Compras..."/></Fld>
-                <Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)} placeholder="11 1234-5678"/></Fld>
-                <Fld label="Email" hint><I type="email" value={f.email} onChange={e=>set("email",e.target.value)} placeholder="mail@empresa.com"/></Fld>
-                <Fld label="Ciudad" hint><I value={f.ciudad} onChange={e=>set("ciudad",e.target.value)} placeholder="Buenos Aires..."/></Fld>
-                <Fld label="Rubro" hint><S value={f.rubro} onChange={e=>set("rubro",e.target.value)}>{RUBROS.map(x=><option key={x}>{x}</option>)}</S></Fld>
-                <Fld label="Origen" hint><S value={f.origen} onChange={e=>set("origen",e.target.value)}>{ORIGENES.map(x=><option key={x}>{x}</option>)}</S></Fld>
-                <Fld label="Estado" hint><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{"Activo,Inactivo,Prospecto,Suspendido".split(",").map(x=><option key={x}>{x}</option>)}</S></Fld>
-                <Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="Observaciones..."/></Fld>
-              </div>
-              <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
-                <button style={btnSec} onClick={()=>setModal("det")}>Cancelar</button>
-                <button style={btnPri} onClick={()=>saveExtra(sel.empresa,f)}>Guardar</button>
-              </div>
-            </div>
-          );})()}
+          <FormClienteExtra empresa={sel.empresa} initial={sel.extra} onSave={(f)=>saveExtra(sel.empresa,f)} onClose={()=>setModal(null)}/>
         </Mdl>
       )}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
@@ -624,8 +899,8 @@ function PageProveedores(){
           )}
         </Crd>
       )}
-      {modal==="prov"&&(<Mdl title={sel?.nombre?"Editar proveedor":"Nuevo proveedor"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||EP);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Nombre *" s2><I value={f.nombre} onChange={e=>set("nombre",e.target.value)}/></Fld><Fld label="CUIT" hint><I value={f.cuit} onChange={e=>set("cuit",e.target.value)} placeholder="30-00000000-0"/></Fld><Fld label="Categoría"><S value={f.categoria} onChange={e=>set("categoria",e.target.value)}>{CATS_PROV.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Cond. de pago"><S value={f.condPago} onChange={e=>set("condPago",e.target.value)}>{CONDS_PAGO.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_PROV.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)}/></Fld><Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)}/></Fld><Fld label="Email" hint><I value={f.email} onChange={e=>set("email",e.target.value)}/></Fld><Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)}/></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.nombre.trim())return;saveP({...f,id:f.id||uid()});}}>Guardar</button></div></div>);})()}</Mdl>)}
-      {modal==="fc"&&(<Mdl title={selFc?"Editar factura":"Nueva factura de proveedor"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(selFc||EFP);const set=(k,v)=>setF(p=>{const n={...p,[k]:v};if(k==="montoNeto"||k==="iva"){const nt=pN(n.montoNeto)*(1+pN(n.iva)/100);n.total=nt.toFixed(2);}return n;});return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Proveedor *" s2><S value={f.proveedorId} onChange={e=>set("proveedorId",e.target.value)}><option value="">— Seleccioná —</option>{provs.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</S></Fld><Fld label="N° Factura" hint><I value={f.nroFactura} onChange={e=>set("nroFactura",e.target.value)} placeholder="00005-00012345"/></Fld><Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld><Fld label="Monto neto *"><I type="number" value={f.montoNeto} onChange={e=>set("montoNeto",e.target.value)}/></Fld><Fld label="IVA %"><S value={f.iva} onChange={e=>set("iva",e.target.value)}>{IVA_OPTS.map(x=><option key={x} value={x}>{x}%</option>)}</S></Fld><Fld label="Total (calculado)"><I value={$(f.total)} readOnly style={{opacity:.6}}/></Fld><Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_FC2.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Forma de pago"><S value={f.formaPago} onChange={e=>set("formaPago",e.target.value)}>{FORMAS_P.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="N° cheque / ref." hint><I value={f.nroCheque} onChange={e=>set("nroCheque",e.target.value)}/></Fld><Fld label="Fecha vencimiento" hint><I type="date" value={f.fechaVto} onChange={e=>set("fechaVto",e.target.value)}/></Fld><Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}{v.nroFactura?" · "+v.nroFactura:""}</option>)}</S></Fld><Fld label="Productos / detalle" hint s2><T value={f.productos} onChange={e=>set("productos",e.target.value)}/></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.proveedorId)return;saveF({...f,id:f.id||uid()});}}>Guardar factura</button></div></div>);})()}</Mdl>)}
+      {modal==="prov"&&(<Mdl title={sel?.nombre?"Editar proveedor":"Nuevo proveedor"} onClose={()=>setModal(null)}><FormProveedor initial={sel} onSave={saveP} onClose={()=>setModal(null)}/></Mdl>)}
+      {modal==="fc"&&(<Mdl title={selFc?"Editar factura":"Nueva factura de proveedor"} onClose={()=>setModal(null)}><FormFacturaProv initial={selFc} provs={provs} ventas={ventas} onSave={saveF} onClose={()=>setModal(null)}/></Mdl>)}
       {cfm&&(<Cfm msg={cfm.t==="prov"?"¿Eliminar proveedor y todas sus facturas?":"¿Eliminar esta factura?"} onOk={()=>cfm.t==="prov"?delP(cfm.id):delF(cfm.id)} onCancel={()=>setCfm(null)}/>)}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
     </div>
@@ -767,9 +1042,9 @@ function PageGastos(){
           )}
         </div>
       )}
-      {modal==="gasto"&&(<Mdl title={sel?"Editar gasto":"Nuevo gasto"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||EG);const set=(k,v)=>setF(p=>{const n={...p,[k]:v};if(k==="montoNeto"||k==="iva"){n.total=(pN(n.montoNeto)*(1+pN(n.iva)/100)).toFixed(2);}return n;});return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld><Fld label="Categoría"><S value={f.categoria} onChange={e=>set("categoria",e.target.value)}>{CATS_GASTO.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Emisor *" s2><I value={f.emisor} onChange={e=>set("emisor",e.target.value)} placeholder="Nombre del emisor"/></Fld><Fld label="Monto neto *"><I type="number" value={f.montoNeto} onChange={e=>set("montoNeto",e.target.value)}/></Fld><Fld label="IVA %"><S value={f.iva} onChange={e=>set("iva",e.target.value)}>{IVA_OPTS.map(x=><option key={x} value={x}>{x}%</option>)}</S></Fld><Fld label="Total (calculado)"><I value={$(f.total)} readOnly style={{opacity:.6}}/></Fld><Fld label="Medio de pago"><S value={f.medioPago} onChange={e=>set("medioPago",e.target.value)}>{MEDIOS_G.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Responsable"><I value={f.responsable} onChange={e=>set("responsable",e.target.value)}/></Fld><Fld label="Descripción" s2><I value={f.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Detalle del gasto..."/></Fld><Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.emisor.trim()||!f.montoNeto)return;saveG({...f,id:f.id||uid()});}}>Guardar gasto</button></div></div>);})()}</Mdl>)}
-      {modal==="cheque"&&(<Mdl title={sel?.nro?"Editar cheque":"Nuevo cheque"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||ECH);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Tipo"><S value={f.tipo} onChange={e=>set("tipo",e.target.value)}>{T_CHEQUE.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="N° cheque *"><I value={f.nro} onChange={e=>set("nro",e.target.value)}/></Fld><Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld><Fld label="Emisor"><I value={f.emisor} onChange={e=>set("emisor",e.target.value)}/></Fld><Fld label="Beneficiario"><I value={f.beneficiario} onChange={e=>set("beneficiario",e.target.value)}/></Fld><Fld label="Fecha emisión"><I type="date" value={f.fechaEmision} onChange={e=>set("fechaEmision",e.target.value)}/></Fld><Fld label="Fecha vencimiento"><I type="date" value={f.fechaVto} onChange={e=>set("fechaVto",e.target.value)}/></Fld><Fld label="¿Endosado?"><S value={f.endosado} onChange={e=>set("endosado",e.target.value)}><option value="no">No</option><option value="si">Sí</option></S></Fld>{f.endosado==="si"&&<Fld label="Endosado a"><I value={f.endosadoA} onChange={e=>set("endosadoA",e.target.value)}/></Fld>}<Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.nro.trim()||!f.importe)return;saveP({...f,id:f.id||uid(),instrumento:"cheque"});}}>Guardar cheque</button></div></div>);})()}</Mdl>)}
-      {modal==="transf"&&(<Mdl title={sel?.contraparte?"Editar transferencia":"Nueva transferencia"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||ETR);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Tipo"><S value={f.subtipo} onChange={e=>set("subtipo",e.target.value)}><option value="cobro">↓ Cobro (entrada)</option><option value="pago">↑ Pago (salida)</option></S></Fld><Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld><Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld><Fld label={f.subtipo==="cobro"?"Pagado por *":"Pagado a *"}><I value={f.contraparte} onChange={e=>set("contraparte",e.target.value)}/></Fld><Fld label="Concepto" s2><I value={f.concepto} onChange={e=>set("concepto",e.target.value)} placeholder="Cobro FC..., Pago proveedor..."/></Fld><Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.contraparte.trim()||!f.importe)return;saveP({...f,id:f.id||uid(),instrumento:"transferencia"});}}>Guardar</button></div></div>);})()}</Mdl>)}
+      {modal==="gasto"&&(<Mdl title={sel?"Editar gasto":"Nuevo gasto"} onClose={()=>setModal(null)}><FormGasto initial={sel} ventas={ventas} onSave={saveG} onClose={()=>setModal(null)}/></Mdl>)}
+      {modal==="cheque"&&(<Mdl title={sel?.nro?"Editar cheque":"Nuevo cheque"} onClose={()=>setModal(null)}><FormCheque initial={sel} ventas={ventas} onSave={saveP} onClose={()=>setModal(null)}/></Mdl>)}
+      {modal==="transf"&&(<Mdl title={sel?.contraparte?"Editar transferencia":"Nueva transferencia"} onClose={()=>setModal(null)}><FormTransferencia initial={sel} ventas={ventas} onSave={saveP} onClose={()=>setModal(null)}/></Mdl>)}
       {cfm&&(<Cfm msg="¿Eliminar este registro?" onOk={()=>cfm.t==="g"?delG(cfm.id):delP(cfm.id)} onCancel={()=>setCfm(null)}/>)}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
     </div>
@@ -947,9 +1222,9 @@ function PageCashFlow(){
           </Crd>
         </div>
       )}
-      {modal==="cuenta"&&(<Mdl title={sel?.nombre?"Editar cuenta":"Nueva cuenta"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||EC);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Nombre *" s2><I value={f.nombre} onChange={e=>set("nombre",e.target.value)} placeholder="Ej: Cuenta Macro, FCI Balanz..."/></Fld><Fld label="Tipo"><S value={f.tipo} onChange={e=>set("tipo",e.target.value)}>{T_CUENTA.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Banco"><S value={f.banco} onChange={e=>set("banco",e.target.value)}>{BANCOS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Moneda"><S value={f.moneda} onChange={e=>set("moneda",e.target.value)}>{MONEDAS.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Saldo actual *"><I type="number" value={f.saldo} onChange={e=>set("saldo",e.target.value)}/></Fld><Fld label="Fecha actualización"><I type="date" value={f.fechaActualizacion} onChange={e=>set("fechaActualizacion",e.target.value)}/></Fld><Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="CBU, alias..."/></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.nombre.trim())return;saveC({...f,id:f.id||uid()});}}>Guardar cuenta</button></div></div>);})()}</Mdl>)}
-      {modal==="mov"&&(<Mdl title={sel?.descripcion?"Editar movimiento":"Nuevo movimiento"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||EM);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld><Fld label="Tipo"><S value={f.tipo} onChange={e=>{const v=e.target.value;setF(p=>({...p,tipo:v,esEgreso:EGRESOS_MOV.includes(v)}))}}>{ T_MOV.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Descripción *" s2><I value={f.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Cobro OSPESE FC 1151..."/></Fld><Fld label="Importe *"><I type="number" value={f.importe} onChange={e=>set("importe",e.target.value)}/></Fld><Fld label="Dirección"><div style={{display:"flex",gap:8}}><button type="button" onClick={()=>set("esEgreso",false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${!f.esEgreso?VERDE:"rgba(255,255,255,.1)"}`,background:!f.esEgreso?"rgba(16,185,129,.12)":"transparent",color:!f.esEgreso?VERDE:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600}}>↓ Ingreso</button><button type="button" onClick={()=>set("esEgreso",true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${f.esEgreso?"#ef4444":"rgba(255,255,255,.1)"}`,background:f.esEgreso?"rgba(239,68,68,.1)":"transparent",color:f.esEgreso?ROJO:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600}}>↑ Egreso</button></div></Fld><Fld label="Cuenta" hint><S value={f.cuentaId} onChange={e=>set("cuentaId",e.target.value)}><option value="">— Sin especificar —</option>{cuentas.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}</S></Fld><Fld label="Asociar a venta" hint s2><S value={f.ventaId} onChange={e=>set("ventaId",e.target.value)}><option value="">— Sin asociar —</option>{ventas.map(v=><option key={v.id} value={v.id}>{v.fecha} · {v.cliente}</option>)}</S></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.descripcion.trim()||!f.importe)return;saveM({...f,id:f.id||uid()});}}>Guardar</button></div></div>);})()}</Mdl>)}
-      {modal==="proy"&&(<Mdl title="Agregar ítems a proyección" onClose={()=>setModal(null)}>{(()=>{const[items,setItems]=useState([{id:uid(),fecha:hoy(),descripcion:"",importe:"",esEgreso:false}]);const addI=()=>setItems(p=>[...p,{id:uid(),fecha:hoy(),descripcion:"",importe:"",esEgreso:false}]);const setI=(id,k,v)=>setItems(p=>p.map(x=>x.id===id?{...x,[k]:v}:x));const remI=(id)=>setItems(p=>p.filter(x=>x.id!==id));return(<div><p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Agregá ingresos y egresos futuros esperados.</p>{items.map((it,idx)=><div key={it.id} style={{background:"rgba(255,255,255,.03)",borderRadius:10,padding:14,marginBottom:10,border:"1px solid rgba(255,255,255,.06)"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:12,color:"#64748b",fontWeight:700}}>Ítem {idx+1}</span>{items.length>1&&<button onClick={()=>remI(it.id)} style={{background:"transparent",border:"none",color:ROJO,cursor:"pointer",fontSize:12}}>✕ Quitar</button>}</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:10,alignItems:"end"}}><div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Fecha</label><I type="date" value={it.fecha} onChange={e=>setI(it.id,"fecha",e.target.value)}/></div><div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Descripción</label><I value={it.descripcion} onChange={e=>setI(it.id,"descripcion",e.target.value)} placeholder="Ej: Cobro THAR SA"/></div><div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Importe</label><I type="number" value={it.importe} onChange={e=>setI(it.id,"importe",e.target.value)}/></div><div style={{display:"flex",gap:6,paddingBottom:1}}><button type="button" onClick={()=>setI(it.id,"esEgreso",false)} style={{padding:"8px 10px",borderRadius:7,border:`1px solid ${!it.esEgreso?VERDE:"rgba(255,255,255,.1)"}`,background:!it.esEgreso?"rgba(16,185,129,.12)":"transparent",color:!it.esEgreso?VERDE:"#64748b",cursor:"pointer",fontSize:12,fontWeight:600}}>↓</button><button type="button" onClick={()=>setI(it.id,"esEgreso",true)} style={{padding:"8px 10px",borderRadius:7,border:`1px solid ${it.esEgreso?"#ef4444":"rgba(255,255,255,.1)"}`,background:it.esEgreso?"rgba(239,68,68,.1)":"transparent",color:it.esEgreso?ROJO:"#64748b",cursor:"pointer",fontSize:12,fontWeight:600}}>↑</button></div></div></div>)}<button onClick={addI} style={{width:"100%",padding:9,borderRadius:9,border:"1px dashed rgba(255,255,255,.12)",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:13,marginBottom:16}}>+ Agregar ítem</button><div style={{display:"flex",gap:10,justifyContent:"flex-end",borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={async()=>{const v=items.filter(x=>x.descripcion.trim()&&x.importe&&!isNaN(x.importe)).map(x=>({...x,id:uid(),tipo:"Proyectado",proyectado:true}));if(!v.length)return;const n=[...movs,...v];setMovs(n);await sl(K.movs,n);setModal(null);showToast(`${v.length} ítem${v.length>1?"s":""} agregados`);}}>Agregar a proyección</button></div></div>);})()}</Mdl>)}
+      {modal==="cuenta"&&(<Mdl title={sel?.nombre?"Editar cuenta":"Nueva cuenta"} onClose={()=>setModal(null)}><FormCuenta initial={sel} onSave={saveC} onClose={()=>setModal(null)}/></Mdl>)}
+      {modal==="mov"&&(<Mdl title={sel?.descripcion?"Editar movimiento":"Nuevo movimiento"} onClose={()=>setModal(null)}><FormMovimiento initial={sel} cuentas={cuentas} ventas={ventas} onSave={saveM} onClose={()=>setModal(null)}/></Mdl>)}
+      {modal==="proy"&&(<Mdl title="Agregar ítems a proyección" onClose={()=>setModal(null)}><FormProyeccion movs={movs} onSave={async(items)=>{const v=items.map(x=>({...x,id:uid(),tipo:"Proyectado",proyectado:true}));if(!v.length)return;const n=[...movs,...v];setMovs(n);await sl(K.movs,n);setModal(null);showToast(`${v.length} ítem${v.length>1?"s":""} agregados`);}} onClose={()=>setModal(null)}/></Mdl>)}
       {cfm&&(<Cfm msg="¿Eliminar?" onOk={()=>{if(cfm.t==="c")delC(cfm.id);else delM(cfm.id);}} onCancel={()=>setCfm(null)}/>)}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
     </div>
@@ -1178,7 +1453,7 @@ function PageCotizaciones(){
           </table><p style={{fontSize:11,color:"#334155",margin:"10px 4px 0",textAlign:"right"}}>{filt.length} de {cots.length}</p></div>
         )}
       </Crd>
-      {modal==="form"&&(<Mdl title={sel?"Editar cotización":"Nueva cotización"} onClose={()=>setModal(null)}>{(()=>{const[f,setF]=useState(sel||ECOT);const set=(k,v)=>setF(p=>({...p,[k]:v}));return(<div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}><Fld label="Empresa *" s2><I value={f.empresa} onChange={e=>set("empresa",e.target.value)} placeholder="Nombre de la empresa"/></Fld><Fld label="Contacto" hint><I value={f.contacto} onChange={e=>set("contacto",e.target.value)}/></Fld><Fld label="Teléfono" hint><I value={f.tel} onChange={e=>set("tel",e.target.value)} placeholder="11 1234-5678"/></Fld><Fld label="Email" hint><I type="email" value={f.email} onChange={e=>set("email",e.target.value)}/></Fld><Fld label="Producto / Servicio"><I value={f.producto} onChange={e=>set("producto",e.target.value)} placeholder="Qué se cotizó"/></Fld><Fld label="Vendedor"><I value={f.vendedor} onChange={e=>set("vendedor",e.target.value)}/></Fld><Fld label="Fecha"><I type="date" value={f.fecha} onChange={e=>set("fecha",e.target.value)}/></Fld><Fld label="Estado"><S value={f.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_COT.map(x=><option key={x}>{x}</option>)}</S></Fld><Fld label="Notas" hint s2><T value={f.notas} onChange={e=>set("notas",e.target.value)} placeholder="Detalle, presupuesto, seguimiento..."/></Fld></div><div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}><button style={btnSec} onClick={()=>setModal(null)}>Cancelar</button><button style={btnPri} onClick={()=>{if(!f.empresa.trim())return;save({...f,id:f.id||uid()});}}>Guardar</button></div></div>);})()}</Mdl>)}
+      {modal==="form"&&(<Mdl title={sel?"Editar cotización":"Nueva cotización"} onClose={()=>setModal(null)}><FormCotizacion initial={sel} onSave={save} onClose={()=>setModal(null)}/></Mdl>)}
       {cfm&&(<Cfm msg="¿Eliminar esta cotización?" onOk={()=>del(cfm)} onCancel={()=>setCfm(null)}/>)}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
     </div>
@@ -1659,57 +1934,7 @@ function PageComisiones(){
       )}
 
       {/* Modal configuración % */}
-      {modalConf&&(
-        <Mdl title="Configurar comisiones por vendedor" onClose={()=>setModalConf(false)}>
-          {(()=>{
-            const[tmpCfg,setTmpCfg]=useState({...config});
-            const allVnd=[...new Set([...vendedores,...Object.keys(config)])];
-            return(
-              <div>
-                <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Definí el porcentaje de comisión para cada vendedor. Se aplica sobre el monto cobrado de cada venta.</p>
-                {allVnd.length===0&&<p style={{color:"#334155",fontSize:13,textAlign:"center",padding:"20px 0"}}>No hay vendedores registrados aún. Cargá ventas con el campo Vendedor completo.</p>}
-                {allVnd.map(vnd=>(
-                  <div key={vnd} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-                    <Av name={vnd} size={36}/>
-                    <div style={{flex:1}}>
-                      <p style={{fontSize:13,fontWeight:600,color:"#e2e8f0",margin:"0 0 2px"}}>{vnd}</p>
-                      <p style={{fontSize:11,color:"#475569",margin:0}}>Vendedor</p>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <I type="number" min="0" max="100" step="0.5"
-                        value={tmpCfg[vnd]?.pct||""}
-                        onChange={e=>setTmpCfg(p=>({...p,[vnd]:{...(p[vnd]||{}),pct:parseFloat(e.target.value)||0}}))}
-                        placeholder="0"
-                        style={{width:80,textAlign:"center"}}
-                      />
-                      <span style={{fontSize:14,color:"#64748b",fontWeight:600}}>%</span>
-                    </div>
-                  </div>
-                ))}
-                {/* Agregar vendedor manual */}
-                <div style={{marginTop:16,padding:"12px 14px",background:"rgba(255,255,255,.03)",borderRadius:10,border:"1px solid rgba(255,255,255,.06)"}}>
-                  <p style={{fontSize:12,color:"#475569",margin:"0 0 8px",fontWeight:700,textTransform:"uppercase"}}>Agregar vendedor manualmente</p>
-                  {(()=>{
-                    const[nuevoVnd,setNuevoVnd]=useState("");
-                    const[nuevoPct,setNuevoPct]=useState("");
-                    return(
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <I value={nuevoVnd} onChange={e=>setNuevoVnd(e.target.value)} placeholder="Nombre del vendedor" style={{flex:1}}/>
-                        <I type="number" value={nuevoPct} onChange={e=>setNuevoPct(e.target.value)} placeholder="%" style={{width:70,textAlign:"center"}}/>
-                        <button style={btnPri} onClick={()=>{if(!nuevoVnd.trim())return;setTmpCfg(p=>({...p,[nuevoVnd.trim()]:{...(p[nuevoVnd.trim()]||{}),pct:parseFloat(nuevoPct)||0}}));setNuevoVnd("");setNuevoPct("");}}>+</button>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
-                  <button style={btnSec} onClick={()=>setModalConf(false)}>Cancelar</button>
-                  <button style={btnPri} onClick={async()=>{await saveConfig(tmpCfg);setModalConf(false);showToast("Configuración guardada");}}>Guardar configuración</button>
-                </div>
-              </div>
-            );
-          })()}
-        </Mdl>
-      )}
+      {modalConf&&(<Mdl title="Configurar comisiones por vendedor" onClose={()=>setModalConf(false)}><FormComisionesConfig initial={config} vendedores={vendedores} onSave={async(cfg)=>{await saveConfig(cfg);setModalConf(false);showToast("Configuración guardada");}} onClose={()=>setModalConf(false)}/></Mdl>)}
       {toast&&<Tst msg={toast.msg} type={toast.type}/>}
     </div>
   );
