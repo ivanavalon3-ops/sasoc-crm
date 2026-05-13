@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
          XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
@@ -142,6 +143,29 @@ function Td({children,g,r,mono,fw}){return <td style={{padding:"9px 10px",fontSi
 
 const btnPri = {padding:"8px 18px",borderRadius:8,border:"1px solid #10b981",background:"#065f46",color:"#6ee7b7",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"};
 const btnSec = {padding:"8px 16px",borderRadius:8,border:"1px solid rgba(255,255,255,.12)",background:"transparent",color:"#94a3b8",cursor:"pointer",fontSize:13,fontFamily:"inherit"};
+
+
+// ─── EXPORTAR A EXCEL ─────────────────────────────────────────────
+function exportExcel(data, filename, sheetName = "Datos") {
+  if (!data || !data.length) return;
+  const ws = XLSX.utils.json_to_sheet(data);
+  // Auto column widths
+  const cols = Object.keys(data[0]);
+  ws['!cols'] = cols.map(k => ({
+    wch: Math.max(k.length, ...data.map(r => String(r[k] ?? "").length).slice(0,50)) + 2
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function BtnExport({ onClick, label = "Exportar Excel" }) {
+  return (
+    <button onClick={onClick} style={{padding:"7px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+      ↓ {label}
+    </button>
+  );
+}
 
 // ─── HOOK TOAST ───────────────────────────────────────────────────
 function useToast(){
@@ -307,9 +331,12 @@ function PageVentas(){
         <Met label="Por cobrar" val={$(tp)} sub="Pendiente" dn={tp>0}/>
         <Met label="Ticket promedio" val={$(ventas.length?tv/ventas.length:0)} sub="Por factura"/>
       </div>
-      <div style={{display:"flex",gap:6,marginBottom:14}}>
+      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {["lista","estadisticas"].map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"7px 16px",borderRadius:8,border:"none",background:tab===t?"rgba(16,185,129,.12)":"rgba(255,255,255,.04)",color:tab===t?VERDE:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>{t==="lista"?"≡ Lista":"∿ Historial"}</button>)}
-        <button style={{...btnPri,marginLeft:"auto"}} onClick={()=>{setSel(null);setModal("form");}}>+ Nueva venta</button>
+        <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+          <BtnExport onClick={()=>exportExcel(ventas.map(v=>({Fecha:v.fecha,Cliente:v.cliente,CUIT:v.cuit,"N° Factura":v.nroFactura,Tipo:v.tipo,Vendedor:v.vendedor,"Monto Neto":v.montoNeto,IVA:v.iva+"%" ,"Total":v.totalVenta,Cobrado:v.cobrado,Pendiente:v.pendiente,Estado:v.estado,Productos:v.productos})),"ventas_sasoc","Ventas")}/>
+          <button style={btnPri} onClick={()=>{setSel(null);setModal("form");}}>+ Nueva venta</button>
+        </div>
       </div>
       {tab==="lista"&&(
         <Crd>
@@ -419,6 +446,7 @@ function PageClientes(){
       </div>
       <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Buscar empresa, contacto o teléfono..." style={{...IS,flex:1,minWidth:200}}/>
+        <BtnExport onClick={()=>exportExcel(clientes.map(c=>({Empresa:c.empresa,Contacto:c.extra?.contacto||"",Teléfono:c.extra?.tel||"",Email:c.extra?.email||"",Ciudad:c.extra?.ciudad||"",Rubro:c.extra?.rubro||"","Total Facturado":c.tv,"Pendiente":c.tp,Facturas:c.cvs,Estado:c.extra?.estado||"Activo"})),"clientes_sasoc","Clientes")}/>
         <div style={{display:"flex",gap:6}}>
           {["lista","cards"].map(t=><button key={t} onClick={()=>setCards(t==="cards")} style={{padding:"7px 14px",borderRadius:8,border:"none",background:(t==="cards")===cards?"rgba(16,185,129,.12)":"rgba(255,255,255,.04)",color:(t==="cards")===cards?VERDE:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>{t==="lista"?"≡":"⊞"}</button>)}
         </div>
@@ -543,6 +571,7 @@ function PageProveedores(){
       <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {["provs","facs"].map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"7px 16px",borderRadius:8,border:"none",background:tab===t?"rgba(16,185,129,.12)":"rgba(255,255,255,.04)",color:tab===t?VERDE:"#64748b",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>{t==="provs"?`🏭 Proveedores (${provs.length})`:`📄 Facturas (${facs.length})`}</button>)}
         <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+          <BtnExport onClick={()=>{if(tab==="provs")exportExcel(provs.map(p=>({Proveedor:p.nombre,CUIT:p.cuit,Categoría:p.categoria,"Cond. Pago":p.condPago,Contacto:p.contacto,Teléfono:p.tel,Estado:p.estado})),"proveedores_sasoc","Proveedores");else exportExcel(facs.map(f=>({Fecha:f.fecha,Proveedor:provs.find(p=>p.id===f.proveedorId)?.nombre||"","N° Factura":f.nroFactura,"Monto Neto":f.montoNeto,IVA:f.iva+"%",Total:f.total,"Forma Pago":f.formaPago,Estado:f.estado,"Fecha Vto":f.fechaVto})),"facturas_prov_sasoc","Facturas Prov");}}/>
           <button style={{...btnPri,background:"rgba(16,185,129,.08)",borderColor:"rgba(16,185,129,.4)",color:"#34d399"}} onClick={()=>{setSelFc(null);setModal("fc");}}>+ Factura</button>
           <button style={btnPri} onClick={()=>{setSel(null);setModal("prov");}}>+ Proveedor</button>
         </div>
@@ -842,6 +871,10 @@ function PageCashFlow(){
       )}
       {tab==="movs"&&(
         <Crd>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <p style={{margin:0,fontSize:13,color:"#64748b"}}>{reales.length} movimientos</p>
+            <BtnExport onClick={()=>exportExcel(reales.map(m=>({Fecha:m.fecha,Descripción:m.descripcion,Tipo:m.tipo,Dirección:m.esEgreso?"Egreso":"Ingreso",Importe:m.importe,Cuenta:cuentas.find(c=>c.id===m.cuentaId)?.nombre||""})),"cashflow_sasoc","Movimientos")}/>
+          </div>
           <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Buscar descripción o tipo..." style={{...IS,flex:1,minWidth:200}}/>
             <select value={fTipo} onChange={e=>setFTipo(e.target.value)} style={{...IS,width:160}}><option value="Todos">Todos</option><option value="Ingresos">Solo ingresos</option><option value="Egresos">Solo egresos</option>{T_MOV.map(x=><option key={x}>{x}</option>)}</select>
@@ -954,8 +987,11 @@ function PageEstadisticas(){
   const SLBL=["🏠 General","📈 Ventas","💰 Finanzas","👥 Clientes","📊 Rentabilidad"];
   return (
     <div>
-      <div style={{display:"flex",gap:4,marginBottom:20,flexWrap:"wrap"}}>
-        {SECS.map((s,i)=><button key={s} onClick={()=>setSec(s)} style={{padding:"8px 16px",borderRadius:9,border:sec===s?"1px solid rgba(16,185,129,.25)":"1px solid transparent",background:sec===s?"rgba(16,185,129,.15)":"transparent",color:sec===s?VERDE:"#475569",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>{SLBL[i]}</button>)}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {SECS.map((s,i)=><button key={s} onClick={()=>setSec(s)} style={{padding:"8px 16px",borderRadius:9,border:sec===s?"1px solid rgba(16,185,129,.25)":"1px solid transparent",background:sec===s?"rgba(16,185,129,.15)":"transparent",color:sec===s?VERDE:"#475569",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>{SLBL[i]}</button>)}
+        </div>
+        <BtnExport label="Exportar todo" onClick={()=>{const wb=XLSX.utils.book_new();[["Ventas",v.map(x=>({Fecha:x.fecha,Cliente:x.cliente,Total:x.totalVenta,Cobrado:x.cobrado,Estado:x.estado}))],["Gastos",g.map(x=>({Fecha:x.fecha,Emisor:x.emisor,Categoría:x.categoria,Total:x.total}))],["Clientes",Object.entries(Object.fromEntries(v.map(x=>[x.cliente,x]))).map(([n])=>({Cliente:n}))]].forEach(([name,data])=>{if(data.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),name);});XLSX.writeFile(wb,`sasoc_reporte_${new Date().toISOString().slice(0,10)}.xlsx`);}}/>
       </div>
       {sec==="gral"&&(
         <div>
@@ -1149,6 +1185,536 @@ function PageCotizaciones(){
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// PAGE: IMPORTAR DATOS
+// ══════════════════════════════════════════════════════════════════
+const IMP_MODULES = {
+  ventas: {
+    label:"Ventas / Facturas", icon:"🧾", key:K.ventas, color:VERDE,
+    fields:[
+      {id:"fecha",label:"Fecha",req:true,hint:"DD/MM/YYYY o YYYY-MM-DD"},
+      {id:"cliente",label:"Cliente",req:true},{id:"cuit",label:"CUIT",req:false},
+      {id:"nroFactura",label:"N° Factura",req:false},{id:"tipo",label:"Tipo FC",req:false,hint:"A, B o C"},
+      {id:"vendedor",label:"Vendedor",req:false},{id:"montoNeto",label:"Monto neto s/IVA",req:true,hint:"Número sin $"},
+      {id:"iva",label:"IVA %",req:false,hint:"21"},{id:"totalVenta",label:"Total",req:false,hint:"Se calcula si no está"},
+      {id:"cobrado",label:"Cobrado",req:false},{id:"estado",label:"Estado",req:false,hint:"Cobrado, Pendiente..."},
+      {id:"productos",label:"Productos",req:false},
+    ],
+    transform:(row)=>{
+      const neto=parseFloat(row.montoNeto)||0;
+      const ivaR=(parseFloat(row.iva||"21"))/100;
+      const total=row.totalVenta?parseFloat(row.totalVenta):neto*(1+ivaR);
+      const cobrado=parseFloat(row.cobrado)||0;
+      return{id:uid(),fecha:impNormDate(row.fecha)||hoy(),cliente:row.cliente?.trim()||"",cuit:row.cuit?.trim()||"",nroFactura:row.nroFactura?.trim()||"",tipo:row.tipo?.trim()||"A",vendedor:row.vendedor?.trim()||"Ivan Diaz",montoNeto:neto.toFixed(2),iva:row.iva?.toString()||"21",totalVenta:total.toFixed(2),cobrado:cobrado.toFixed(2),pendiente:(total-cobrado).toFixed(2),estado:row.estado?.trim()||(cobrado>=total?"Cobrado":"Pendiente"),productos:row.productos?.trim()||"",comentario:"",fechaCobro:"",medioCobro:"Banco Macro"};
+    }
+  },
+  proveedores:{
+    label:"Proveedores",icon:"🏭",key:K.proveedores,color:AZUL,
+    fields:[
+      {id:"nombre",label:"Nombre",req:true},{id:"cuit",label:"CUIT",req:false},
+      {id:"categoria",label:"Categoría",req:false},{id:"contacto",label:"Contacto",req:false},
+      {id:"tel",label:"Teléfono",req:false},{id:"condPago",label:"Cond. pago",req:false,hint:"60 días"},
+    ],
+    transform:(row)=>({id:uid(),nombre:row.nombre?.trim()||"",cuit:row.cuit?.trim()||"",categoria:row.categoria?.trim()||"Productos",contacto:row.contacto?.trim()||"",tel:row.tel?.trim()||"",email:"",condPago:row.condPago?.trim()||"60 días",estado:"Activo",notas:""})
+  },
+  gastos:{
+    label:"Gastos",icon:"💸",key:K.gastos,color:ROJO,
+    fields:[
+      {id:"fecha",label:"Fecha",req:true},{id:"emisor",label:"Emisor",req:true},
+      {id:"categoria",label:"Categoría",req:false},{id:"montoNeto",label:"Monto neto",req:true},
+      {id:"iva",label:"IVA %",req:false,hint:"21"},{id:"total",label:"Total",req:false},
+      {id:"medioPago",label:"Medio pago",req:false},{id:"descripcion",label:"Descripción",req:false},
+    ],
+    transform:(row)=>{const neto=parseFloat(row.montoNeto)||0;const ivaR=(parseFloat(row.iva||"21"))/100;const total=row.total?parseFloat(row.total):neto*(1+ivaR);return{id:uid(),fecha:impNormDate(row.fecha)||hoy(),emisor:row.emisor?.trim()||"",categoria:row.categoria?.trim()||"Varios",tipoComp:"FC A",montoNeto:neto.toFixed(2),iva:row.iva?.toString()||"21",total:total.toFixed(2),medioPago:row.medioPago?.trim()||"Transferencia",responsable:"Ivan Diaz",descripcion:row.descripcion?.trim()||"",notas:"",ventaId:""};}
+  },
+  cuentas:{
+    label:"Cuentas bancarias",icon:"🏦",key:K.cuentas,color:AMBAR,
+    fields:[
+      {id:"nombre",label:"Nombre cuenta",req:true,hint:"Ej: Cuenta Macro"},
+      {id:"tipo",label:"Tipo",req:false,hint:"Cuenta corriente, FCI..."},
+      {id:"banco",label:"Banco",req:false},{id:"moneda",label:"Moneda",req:false,hint:"ARS, USD"},
+      {id:"saldo",label:"Saldo actual",req:true,hint:"Número sin $"},
+    ],
+    transform:(row)=>({id:uid(),nombre:row.nombre?.trim()||"",tipo:row.tipo?.trim()||"Cuenta corriente",banco:row.banco?.trim()||"Banco Macro",moneda:row.moneda?.trim()||"ARS",saldo:parseFloat(row.saldo)||0,notas:"",fechaActualizacion:hoy()})
+  },
+};
+
+function impNormDate(val){
+  if(!val)return null;
+  const s=val.toString().trim();
+  const m1=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m1)return`${m1[3]}-${m1[2].padStart(2,"0")}-${m1[1].padStart(2,"0")}`;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  if(!isNaN(val)){const d=new Date(Math.round((Number(val)-25569)*86400*1000));return d.toISOString().slice(0,10);}
+  return null;
+}
+
+function autoMap(cols,fields){
+  const syns={fecha:["fecha","date","fecha factura","fecha venta"],cliente:["cliente","empresa","client","company"],cuit:["cuit","cuil"],nroFactura:["numero factura","nro factura","n° factura","factura","invoice"],tipo:["tipo","tipo fc","tipo factura"],vendedor:["vendedor","seller"],montoNeto:["neto","monto neto","neto gravado","base imponible","precio neto"],iva:["iva","iva %","tasa iva"],totalVenta:["total","total venta","importe total","total con iva"],cobrado:["cobrado","pagado","monto cobrado"],estado:["estado","status","estado pago"],productos:["producto","productos","descripcion","detalle","items"],emisor:["emisor","proveedor","supplier"],categoria:["categoria","rubro","category"],total:["total","importe total"],medioPago:["medio pago","forma pago","payment"],descripcion:["descripcion","detalle","description","concepto"],nombre:["nombre","name","razon social"],banco:["banco","bank"],moneda:["moneda","currency"],saldo:["saldo","balance","importe"],contacto:["contacto","contact"],tel:["telefono","tel","phone"],condPago:["condicion pago","cond pago","plazo"]};
+  const map={};
+  cols.forEach(col=>{
+    const cn=col.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    for(const[fid,ss]of Object.entries(syns)){
+      if(fields.some(f=>f.id===fid)&&!map[fid]){
+        if(ss.some(s=>cn.includes(s)||s.includes(cn)))map[fid]=col;
+      }
+    }
+  });
+  return map;
+}
+
+function PageImportar(){
+  const[step,setStep]=useState("inicio");
+  const[modKey,setModKey]=useState("ventas");
+  const[sheetData,setSheetData]=useState(null);
+  const[mapping,setMapping]=useState({});
+  const[mergeMode,setMergeMode]=useState("append");
+  const[result,setResult]=useState(null);
+  const[toast,showToast]=useToast();
+  const fileRef=useState(null);
+
+  const mod=IMP_MODULES[modKey];
+
+  const parseFile=(file)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:"array",cellDates:false});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+        if(raw.length<2){showToast("El archivo está vacío","error");return;}
+        const headers=raw[0].map(h=>h?.toString().trim()).filter(Boolean);
+        const rows=raw.slice(1).filter(r=>r.some(c=>c!=="")).map(r=>{const o={};headers.forEach((h,i)=>{o[h]=r[i]??"";});return o;});
+        setSheetData({fileName:file.name,rows,cols:headers});
+        setMapping(autoMap(headers,mod.fields));
+        setStep("mapear");
+        showToast(`${rows.length} filas detectadas en "${file.name}"`);
+      }catch(err){showToast("Error al leer: "+err.message,"error");}
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const doImport=async()=>{
+    setStep("cargando");
+    const rows=sheetData.rows;
+    let ok=0;const errors=[];
+    const remapped=rows.map(row=>{const m={};Object.entries(mapping).forEach(([fid,col])=>{if(col)m[fid]=row[col];});return m;});
+    const req=mod.fields.filter(f=>f.req).map(f=>f.id);
+    const valid=remapped.filter((r,i)=>{const miss=req.filter(f=>!r[f]||r[f].toString().trim()==="");if(miss.length){errors.push(`Fila ${i+2}: falta ${miss.join(", ")}`);return false;}return true;});
+    const transformed=valid.map(r=>{try{return mod.transform(r);}catch(e){return null;}}).filter(Boolean);
+    try{
+      const existing=await gl(mod.key);
+      const newData=mergeMode==="replace"?transformed:[...existing,...transformed];
+      await sl(mod.key,newData);
+      ok=transformed.length;
+    }catch(err){errors.push("Error al guardar: "+err.message);}
+    setResult({ok,errors:errors.slice(0,15),total:rows.length});
+    setStep("done");
+  };
+
+  const reset=()=>{setStep("inicio");setSheetData(null);setMapping({});setResult(null);};
+
+  return(
+    <div>
+      {/* Header steps */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
+        {["inicio","mapear","done"].map((s,i)=>(
+          <div key={s} style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:28,height:28,borderRadius:"50%",background:step===s||( s==="done"&&step==="cargando")?"#065f46":"rgba(255,255,255,.06)",border:`1px solid ${step===s?"#10b981":"rgba(255,255,255,.1)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:step===s?"#34d399":"#475569"}}>{i+1}</div>
+            <span style={{fontSize:12,color:step===s?"#34d399":"#475569",fontWeight:step===s?600:400}}>{s==="inicio"?"Seleccionar":s==="mapear"?"Mapear columnas":"Resultado"}</span>
+            {i<2&&<div style={{width:20,height:1,background:"rgba(255,255,255,.08)"}}/>}
+          </div>
+        ))}
+      </div>
+
+      {step==="inicio"&&(
+        <div>
+          <Crd>
+            <p style={{color:"#e2e8f0",fontWeight:700,fontSize:14,marginBottom:16}}>1. Seleccioná el módulo de destino</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:24}}>
+              {Object.entries(IMP_MODULES).map(([key,m])=>(
+                <button key={key} onClick={()=>setModKey(key)} style={{padding:"12px 16px",borderRadius:12,border:`1px solid ${modKey===key?m.color:"rgba(255,255,255,.08)"}`,background:modKey===key?`rgba(${modKey===key&&m.color==="#10b981"?"16,185,129":m.color==="#3b82f6"?"59,130,246":m.color==="#f87171"?"248,113,113":"245,158,11"},.08)`:"rgba(255,255,255,.03)",cursor:"pointer",textAlign:"left",fontFamily:"inherit",transition:"all .15s"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:22}}>{m.icon}</span>
+                    <div>
+                      <p style={{color:modKey===key?m.color:"#e2e8f0",fontWeight:600,fontSize:13,margin:0}}>{m.label}</p>
+                      <p style={{color:"#475569",fontSize:11,margin:"2px 0 0"}}>{m.fields.length} campos</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p style={{color:"#e2e8f0",fontWeight:700,fontSize:14,marginBottom:12}}>2. Subí tu archivo Excel o CSV</p>
+            <div
+              onDrop={e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)parseFile(f);}}
+              onDragOver={e=>e.preventDefault()}
+              onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls,.csv";inp.onchange=e=>{if(e.target.files[0])parseFile(e.target.files[0]);};inp.click();}}
+              style={{border:"2px dashed rgba(255,255,255,.12)",borderRadius:14,padding:"40px",textAlign:"center",cursor:"pointer",transition:"border-color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor="#10b981"}
+              onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(255,255,255,.12)"}>
+              <p style={{fontSize:32,marginBottom:12}}>📤</p>
+              <p style={{color:"#e2e8f0",fontWeight:600,fontSize:14,margin:"0 0 6px"}}>Arrastrá tu archivo acá</p>
+              <p style={{color:"#475569",fontSize:13,margin:"0 0 14px"}}>o hacé clic para seleccionar</p>
+              <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                {[".xlsx",".xls",".csv"].map(ext=><span key={ext} style={{background:"rgba(255,255,255,.06)",padding:"3px 10px",borderRadius:20,fontSize:12,color:"#64748b"}}>{ext}</span>)}
+              </div>
+            </div>
+          </Crd>
+          {/* Formato esperado */}
+          <Crd mb={0}>
+            <p style={{color:"#e2e8f0",fontWeight:700,fontSize:13,marginBottom:12}}>📋 Formato esperado para <span style={{color:mod.color}}>{mod.label}</span></p>
+            <div style={{overflowX:"auto"}}>
+              <table style={{borderCollapse:"collapse",fontSize:12}}>
+                <thead><tr>{mod.fields.map(f=><th key={f.id} style={{padding:"6px 12px",borderBottom:"1px solid rgba(255,255,255,.08)",color:f.req?VERDE:"#64748b",textAlign:"left",whiteSpace:"nowrap",fontWeight:700}}>{f.label}{f.req?" ★":""}</th>)}</tr></thead>
+                <tbody><tr>{mod.fields.map(f=><td key={f.id} style={{padding:"6px 12px",color:"#334155",fontSize:11,whiteSpace:"nowrap"}}>{f.hint||"—"}</td>)}</tr></tbody>
+              </table>
+            </div>
+            <p style={{fontSize:11,color:"#334155",marginTop:8}}>★ Campos obligatorios · La primera fila debe ser el encabezado · El mapeo de columnas es automático</p>
+          </Crd>
+        </div>
+      )}
+
+      {step==="mapear"&&sheetData&&(
+        <div>
+          <Crd>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,flexWrap:"wrap",gap:10}}>
+              <div>
+                <p style={{color:"#e2e8f0",fontWeight:700,fontSize:14,margin:"0 0 4px"}}>Mapeo de columnas — {mod.label}</p>
+                <p style={{fontSize:12,color:"#64748b",margin:0}}>📄 {sheetData.fileName} · {sheetData.rows.length} filas · <span style={{color:VERDE}}>✓ Mapeo automático aplicado</span></p>
+              </div>
+              <span style={{fontSize:11,color:"#64748b"}}>★ = obligatorio</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:18}}>
+              {mod.fields.map(f=>(
+                <div key={f.id} style={{display:"flex",flexDirection:"column",gap:4}}>
+                  <label style={{fontSize:11,color:f.req?VERDE:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:".4px"}}>{f.label}{f.req?" ★":""}</label>
+                  {f.hint&&<span style={{fontSize:10,color:"#334155"}}>{f.hint}</span>}
+                  <select value={mapping[f.id]||""} onChange={e=>setMapping(p=>({...p,[f.id]:e.target.value}))} style={{...IS,border:`1px solid ${mapping[f.id]?VERDE:"rgba(255,255,255,.1)"}`}}>
+                    <option value="">— No mapear —</option>
+                    {sheetData.cols.map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {/* Merge mode */}
+            <div style={{padding:"12px 14px",background:"rgba(255,255,255,.03)",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",marginBottom:18}}>
+              <p style={{fontSize:11,fontWeight:700,color:"#94a3b8",marginBottom:8,textTransform:"uppercase"}}>Modo de importación</p>
+              <div style={{display:"flex",gap:10}}>
+                {[{v:"append",l:"➕ Agregar",d:"Añade sin borrar lo existente"},{v:"replace",l:"🔄 Reemplazar",d:"Borra todo y reemplaza"}].map(opt=>(
+                  <button key={opt.v} onClick={()=>setMergeMode(opt.v)} style={{flex:1,padding:"10px 12px",borderRadius:9,border:`1px solid ${mergeMode===opt.v?(opt.v==="replace"?"#ef4444":"#10b981"):"rgba(255,255,255,.09)"}`,background:mergeMode===opt.v?(opt.v==="replace"?"rgba(239,68,68,.08)":"rgba(16,185,129,.08)"):"transparent",color:mergeMode===opt.v?(opt.v==="replace"?ROJO:VERDE):"#64748b",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>
+                    <p style={{fontWeight:700,fontSize:13,margin:"0 0 2px"}}>{opt.l}</p>
+                    <p style={{fontSize:11,margin:0,opacity:.7}}>{opt.d}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Preview */}
+            <p style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",marginBottom:8}}>Vista previa (primeras 5 filas)</p>
+            <div style={{overflowX:"auto",maxHeight:200,overflowY:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead style={{position:"sticky",top:0,background:"#0d1929"}}>
+                  <tr>{mod.fields.filter(f=>mapping[f.id]).map(f=><th key={f.id} style={{textAlign:"left",padding:"6px 10px",fontSize:10,fontWeight:700,color:"#334155",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,.07)",whiteSpace:"nowrap"}}>{f.label}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {sheetData.rows.slice(0,5).map((row,i)=>(
+                    <tr key={i}>{mod.fields.filter(f=>mapping[f.id]).map(f=><td key={f.id} style={{padding:"6px 10px",borderBottom:"1px solid rgba(255,255,255,.04)",color:"#cbd5e1",whiteSpace:"nowrap",maxWidth:150,overflow:"hidden",textOverflow:"ellipsis"}}>{row[mapping[f.id]]??""}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Crd>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <button style={btnSec} onClick={reset}>Cancelar</button>
+            <button style={btnPri} onClick={doImport}>Importar {sheetData.rows.length} registros →</button>
+          </div>
+        </div>
+      )}
+
+      {step==="cargando"&&(
+        <div style={{textAlign:"center",padding:"80px 0"}}>
+          <div style={{width:52,height:52,border:"4px solid rgba(16,185,129,.2)",borderTopColor:VERDE,borderRadius:"50%",margin:"0 auto 20px",animation:"spin .8s linear infinite"}}/>
+          <p style={{fontSize:17,fontWeight:700,color:"#e2e8f0",margin:"0 0 8px"}}>Importando datos...</p>
+          <p style={{color:"#64748b",fontSize:13}}>Procesando {sheetData?.rows.length} registros en {mod.label}</p>
+        </div>
+      )}
+
+      {step==="done"&&result&&(
+        <div>
+          <div style={{background:result.ok>0?"rgba(16,185,129,.06)":"rgba(239,68,68,.06)",borderRadius:16,padding:"32px",border:`1px solid ${result.ok>0?"rgba(16,185,129,.2)":"rgba(239,68,68,.2)"}`,textAlign:"center",marginBottom:20}}>
+            <p style={{fontSize:48,marginBottom:12}}>{result.ok>0?"✅":"❌"}</p>
+            <p style={{fontSize:20,fontWeight:700,color:"#f1f5f9",margin:"0 0 8px"}}>{result.ok} de {result.total} registros importados correctamente</p>
+            <p style={{color:"#64748b",fontSize:13,margin:0}}>Módulo: {mod.label} · Modo: {mergeMode==="replace"?"Reemplazar":"Agregar"}</p>
+            {result.errors.length>0&&(
+              <div style={{marginTop:16,textAlign:"left",background:"rgba(239,68,68,.06)",borderRadius:10,padding:"12px 14px"}}>
+                <p style={{fontSize:12,color:ROJO,fontWeight:700,marginBottom:6}}>⚠ {result.errors.length} filas con errores:</p>
+                {result.errors.map((e,i)=><p key={i} style={{fontSize:12,color:"#fca5a5",margin:"2px 0"}}>• {e}</p>)}
+              </div>
+            )}
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+            <button style={btnPri} onClick={reset}>+ Importar otro módulo</button>
+          </div>
+        </div>
+      )}
+      {toast&&<Tst msg={toast.msg} type={toast.type}/>}
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// PAGE: COMISIONES
+// ══════════════════════════════════════════════════════════════════
+const K_COM = "sasoc:comisiones_config:v1";
+
+function PageComisiones(){
+  const[ventas,setVentas]=useState([]);
+  const[config,setConfig]=useState({}); // {vendedor: {pct, nombre}}
+  const[loading,setLoading]=useState(true);
+  const[mes,setMes]=useState(hoy().slice(0,7));
+  const[modalConf,setModalConf]=useState(false);
+  const[liquidadas,setLiquidadas]=useState({}); // {ventaId: true}
+  const[toast,showToast]=useToast();
+
+  useEffect(()=>{
+    Promise.all([gl(K.ventas),gl(K_COM)]).then(([v,c])=>{
+      setVentas(v);
+      // config es objeto {vendedor: {pct, liquidadas: {ventaId:true}}}
+      const cfg=Array.isArray(c)?{}:(c||{});
+      setConfig(cfg);
+      // Merge all liquidadas
+      const liq={};
+      Object.values(cfg).forEach(vc=>{ Object.assign(liq, vc.liquidadas||{}); });
+      setLiquidadas(liq);
+      setLoading(false);
+    });
+  },[]);
+
+  const saveConfig=async(cfg)=>{
+    setConfig(cfg);
+    await sl(K_COM, cfg);
+  };
+
+  // Vendedores únicos
+  const vendedores=[...new Set(ventas.map(v=>v.vendedor).filter(Boolean))];
+
+  // Ventas cobradas del mes seleccionado (estado Cobrado o cobrado > 0)
+  const ventasMes=ventas.filter(v=>{
+    const enMes=v.fecha?.slice(0,7)===mes;
+    const cobrada=(v.estado==="Cobrado"||pN(v.cobrado)>0);
+    return enMes&&cobrada;
+  });
+
+  // Calcular comisiones por vendedor
+  const comisiones=vendedores.map(vnd=>{
+    const pct=pN(config[vnd]?.pct||0);
+    const vVnd=ventasMes.filter(v=>v.vendedor===vnd);
+    const totalCobrado=vVnd.reduce((a,v)=>a+pN(v.cobrado),0);
+    const pendLiquidar=vVnd.filter(v=>!liquidadas[v.id]);
+    const yaLiquidadas=vVnd.filter(v=>liquidadas[v.id]);
+    const montoPend=pendLiquidar.reduce((a,v)=>a+pN(v.cobrado),0);
+    const montoLiq=yaLiquidadas.reduce((a,v)=>a+pN(v.cobrado),0);
+    const comPend=montoPend*pct/100;
+    const comLiq=montoLiq*pct/100;
+    return{vnd,pct,vVnd,totalCobrado,pendLiquidar,yaLiquidadas,montoPend,montoLiq,comPend,comLiq,total:totalCobrado*pct/100};
+  }).filter(c=>c.vVnd.length>0||config[c.vnd]);
+
+  const totalComPend=comisiones.reduce((a,c)=>a+c.comPend,0);
+  const totalComLiq=comisiones.reduce((a,c)=>a+c.comLiq,0);
+
+  const liquidarVendedor=async(vnd)=>{
+    const c=comisiones.find(x=>x.vnd===vnd);
+    if(!c||!c.pendLiquidar.length)return;
+    const nuevasLiq={...liquidadas};
+    c.pendLiquidar.forEach(v=>{nuevasLiq[v.id]=true;});
+    setLiquidadas(nuevasLiq);
+    // Guardar en config del vendedor
+    const newCfg={...config,[vnd]:{...config[vnd],liquidadas:{...(config[vnd]?.liquidadas||{}),...Object.fromEntries(c.pendLiquidar.map(v=>[v.id,true]))}}};
+    await saveConfig(newCfg);
+    showToast(`Comisión de ${vnd} marcada como liquidada`);
+  };
+
+  const exportComisiones=()=>{
+    const rows=[];
+    comisiones.forEach(c=>{
+      c.vVnd.forEach(v=>{
+        rows.push({Vendedor:c.vnd,Mes:mes,Fecha:v.fecha,Cliente:v.cliente,"N° Factura":v.nroFactura||"—","Monto Cobrado":pN(v.cobrado),"% Comisión":c.pct+"%","Comisión":pN(v.cobrado)*c.pct/100,Estado:liquidadas[v.id]?"Liquidada":"Pendiente"});
+      });
+    });
+    exportExcel(rows,"comisiones_sasoc","Comisiones");
+  };
+
+  if(loading)return(<Spin/>);
+
+  return(
+    <div>
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <input type="month" value={mes} onChange={e=>setMes(e.target.value)} style={{...IS,width:"auto",fontSize:14,fontWeight:600}}/>
+          <span style={{fontSize:13,color:"#64748b"}}>{ventasMes.length} ventas cobradas en el período</span>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <BtnExport onClick={exportComisiones} label="Exportar liquidación"/>
+          <button style={btnPri} onClick={()=>setModalConf(true)}>⚙ Configurar %</button>
+        </div>
+      </div>
+
+      {/* Métricas */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+        <Met label="Total cobrado (mes)" val={$(ventasMes.reduce((a,v)=>a+pN(v.cobrado),0))} up/>
+        <Met label="Comisiones a pagar" val={$(totalComPend)} sub="Pendientes de liquidar" dn={totalComPend>0}/>
+        <Met label="Ya liquidado" val={$(totalComLiq)} sub="Este mes" up/>
+        <Met label="Vendedores activos" val={comisiones.length} sub="Con ventas en el período"/>
+      </div>
+
+      {vendedores.length===0?(
+        <Crd><div style={{textAlign:"center",padding:"48px 0"}}>
+          <p style={{fontSize:32,marginBottom:10}}>💰</p>
+          <p style={{color:"#334155",fontSize:14,fontWeight:600}}>No hay ventas registradas aún</p>
+          <p style={{color:"#1e3a5f",fontSize:13}}>Cargá ventas con el campo "Vendedor" completo para ver las comisiones.</p>
+        </div></Crd>
+      ):(
+        comisiones.map(c=>(
+          <Crd key={c.vnd}>
+            {/* Cabecera vendedor */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <Av name={c.vnd} size={44}/>
+                <div>
+                  <h3 style={{color:"#f1f5f9",fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{c.vnd}</h3>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{background:"rgba(16,185,129,.12)",color:VERDE,padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:600}}>{c.pct}% de comisión</span>
+                    <span style={{fontSize:12,color:"#64748b"}}>{c.vVnd.length} ventas cobradas</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{textAlign:"right"}}>
+                  <p style={{fontSize:11,color:"#475569",margin:"0 0 2px",textTransform:"uppercase",fontWeight:700}}>A liquidar</p>
+                  <p style={{fontSize:20,fontWeight:700,color:c.comPend>0?AMBAR:"#64748b",margin:0}}>{$(c.comPend)}</p>
+                </div>
+                {c.pendLiquidar.length>0&&(
+                  <button onClick={()=>liquidarVendedor(c.vnd)} style={{...btnPri,background:"rgba(245,158,11,.15)",borderColor:AMBAR,color:AMBAR}}>
+                    ✓ Marcar liquidado
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Resumen */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+              {[
+                {l:"Total cobrado",v:$(c.totalCobrado),c:"#e2e8f0"},
+                {l:"Comisión total",v:$(c.total),c:VERDE},
+                {l:"Ya liquidado",v:$(c.comLiq),c:"#64748b"},
+              ].map((m,i)=>(
+                <div key={i} style={{background:"rgba(255,255,255,.03)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(255,255,255,.06)"}}>
+                  <p style={{fontSize:10,color:"#475569",margin:"0 0 4px",textTransform:"uppercase",fontWeight:700}}>{m.l}</p>
+                  <p style={{fontSize:16,fontWeight:700,color:m.c,margin:0}}>{m.v}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Detalle ventas */}
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr>
+                  <Th>Fecha</Th><Th>Cliente</Th><Th>N° Factura</Th>
+                  <Th>Monto cobrado</Th><Th>Comisión ({c.pct}%)</Th><Th>Estado</Th>
+                </tr></thead>
+                <tbody>
+                  {c.vVnd.map(v=>{
+                    const liq=liquidadas[v.id];
+                    const com=pN(v.cobrado)*c.pct/100;
+                    return(
+                      <tr key={v.id}>
+                        <Td>{fecha(v.fecha)}</Td>
+                        <Td fw>{v.cliente}</Td>
+                        <Td mono>{v.nroFactura||"—"}</Td>
+                        <Td g fw>{$(v.cobrado)}</Td>
+                        <Td fw><span style={{color:liq?"#64748b":AMBAR,fontWeight:700}}>{$(com)}</span></Td>
+                        <Td>
+                          <span style={{background:liq?"rgba(16,185,129,.1)":"rgba(245,158,11,.1)",color:liq?VERDE:AMBAR,padding:"2px 9px",borderRadius:20,fontSize:11,fontWeight:600}}>
+                            {liq?"✓ Liquidada":"Pendiente"}
+                          </span>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{background:"rgba(255,255,255,.03)"}}>
+                    <td colSpan={3} style={{padding:"8px 10px",fontSize:12,color:"#64748b",fontWeight:700}}>TOTAL {c.vnd.toUpperCase()}</td>
+                    <td style={{padding:"8px 10px",fontSize:13,color:VERDE,fontWeight:700}}>{$(c.totalCobrado)}</td>
+                    <td style={{padding:"8px 10px",fontSize:13,color:AMBAR,fontWeight:700}}>{$(c.total)}</td>
+                    <td style={{padding:"8px 10px"}}/>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Crd>
+        ))
+      )}
+
+      {/* Modal configuración % */}
+      {modalConf&&(
+        <Mdl title="Configurar comisiones por vendedor" onClose={()=>setModalConf(false)}>
+          {(()=>{
+            const[tmpCfg,setTmpCfg]=useState({...config});
+            const allVnd=[...new Set([...vendedores,...Object.keys(config)])];
+            return(
+              <div>
+                <p style={{fontSize:13,color:"#64748b",marginBottom:16}}>Definí el porcentaje de comisión para cada vendedor. Se aplica sobre el monto cobrado de cada venta.</p>
+                {allVnd.length===0&&<p style={{color:"#334155",fontSize:13,textAlign:"center",padding:"20px 0"}}>No hay vendedores registrados aún. Cargá ventas con el campo Vendedor completo.</p>}
+                {allVnd.map(vnd=>(
+                  <div key={vnd} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+                    <Av name={vnd} size={36}/>
+                    <div style={{flex:1}}>
+                      <p style={{fontSize:13,fontWeight:600,color:"#e2e8f0",margin:"0 0 2px"}}>{vnd}</p>
+                      <p style={{fontSize:11,color:"#475569",margin:0}}>Vendedor</p>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <I type="number" min="0" max="100" step="0.5"
+                        value={tmpCfg[vnd]?.pct||""}
+                        onChange={e=>setTmpCfg(p=>({...p,[vnd]:{...(p[vnd]||{}),pct:parseFloat(e.target.value)||0}}))}
+                        placeholder="0"
+                        style={{width:80,textAlign:"center"}}
+                      />
+                      <span style={{fontSize:14,color:"#64748b",fontWeight:600}}>%</span>
+                    </div>
+                  </div>
+                ))}
+                {/* Agregar vendedor manual */}
+                <div style={{marginTop:16,padding:"12px 14px",background:"rgba(255,255,255,.03)",borderRadius:10,border:"1px solid rgba(255,255,255,.06)"}}>
+                  <p style={{fontSize:12,color:"#475569",margin:"0 0 8px",fontWeight:700,textTransform:"uppercase"}}>Agregar vendedor manualmente</p>
+                  {(()=>{
+                    const[nuevoVnd,setNuevoVnd]=useState("");
+                    const[nuevoPct,setNuevoPct]=useState("");
+                    return(
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <I value={nuevoVnd} onChange={e=>setNuevoVnd(e.target.value)} placeholder="Nombre del vendedor" style={{flex:1}}/>
+                        <I type="number" value={nuevoPct} onChange={e=>setNuevoPct(e.target.value)} placeholder="%" style={{width:70,textAlign:"center"}}/>
+                        <button style={btnPri} onClick={()=>{if(!nuevoVnd.trim())return;setTmpCfg(p=>({...p,[nuevoVnd.trim()]:{...(p[nuevoVnd.trim()]||{}),pct:parseFloat(nuevoPct)||0}}));setNuevoVnd("");setNuevoPct("");}}>+</button>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:22,borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:18}}>
+                  <button style={btnSec} onClick={()=>setModalConf(false)}>Cancelar</button>
+                  <button style={btnPri} onClick={async()=>{await saveConfig(tmpCfg);setModalConf(false);showToast("Configuración guardada");}}>Guardar configuración</button>
+                </div>
+              </div>
+            );
+          })()}
+        </Mdl>
+      )}
+      {toast&&<Tst msg={toast.msg} type={toast.type}/>}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════
 // SHELL PRINCIPAL
 // ══════════════════════════════════════════════════════════════════
@@ -1161,17 +1727,21 @@ const NAV=[
   {id:"gastos",label:"Gastos / Pagos",icon:"💳"},
   {id:"cashflow",label:"Cash Flow",icon:"💵",sec:"FINANZAS"},
   {id:"estadisticas",label:"Estadísticas",icon:"📈",sec:"ANÁLISIS"},
+  {id:"importar",label:"Importar datos",icon:"📤",sec:"HERRAMIENTAS"},
+  {id:"comisiones",label:"Comisiones",icon:"💰",sec:null},
 ];
 
 const PAGES={
   dashboard:<PageDashboard/>,ventas:<PageVentas/>,clientes:<PageClientes/>,
   cotizaciones:<PageCotizaciones/>,proveedores:<PageProveedores/>,
   gastos:<PageGastos/>,cashflow:<PageCashFlow/>,estadisticas:<PageEstadisticas/>,
+  importar:<PageImportar/>,
+  comisiones:<PageComisiones/>,
 };
 
-const LABELS={dashboard:"Dashboard",ventas:"Ventas",clientes:"Clientes",cotizaciones:"Cotizaciones",proveedores:"Proveedores",gastos:"Gastos / Pagos",cashflow:"Cash Flow",estadisticas:"Estadísticas"};
+const LABELS={dashboard:"Dashboard",ventas:"Ventas",clientes:"Clientes",cotizaciones:"Cotizaciones",proveedores:"Proveedores",gastos:"Gastos / Pagos",cashflow:"Cash Flow",estadisticas:"Estadísticas",importar:"Importar datos",comisiones:"Comisiones"};
 
-export default function App(){
+export default function App({user=null, onLogout=null}){
   const[page,setPage]=useState("dashboard");
   return (
     <div style={{display:"flex",minHeight:"100vh",background:"#0b1120",fontFamily:"'DM Sans',system-ui,sans-serif",color:"#e2e8f0"}}>
@@ -1208,8 +1778,14 @@ export default function App(){
         </nav>
         <div style={{padding:10,borderTop:"1px solid rgba(255,255,255,.07)"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"rgba(255,255,255,.04)",borderRadius:8}}>
-            <div style={{width:28,height:28,borderRadius:"50%",background:"#065f46",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#6ee7b7",fontWeight:700,flexShrink:0}}>ID</div>
-            <div><p style={{color:"#e2e8f0",fontSize:12,fontWeight:700,margin:0}}>Ivan Diaz</p><p style={{color:"#334155",fontSize:10,margin:0}}>Administrador</p></div>
+            <div style={{width:28,height:28,borderRadius:"50%",background:"#065f46",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#6ee7b7",fontWeight:700,flexShrink:0}}>
+              {user?.email?.[0]?.toUpperCase()||"U"}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <p style={{color:"#e2e8f0",fontSize:11,fontWeight:700,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email||"Usuario"}</p>
+              <p style={{color:"#334155",fontSize:10,margin:0}}>Administrador</p>
+            </div>
+            {onLogout&&<button onClick={onLogout} title="Cerrar sesión" style={{background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:14,padding:"2px 4px",flexShrink:0}} >⎋</button>}
           </div>
         </div>
       </div>
