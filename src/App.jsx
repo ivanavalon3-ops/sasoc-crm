@@ -1989,8 +1989,9 @@ export default function App({user=null, onLogout=null}){
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%"}}>
-                <polygon points="50,3 97,87 3,87" fill="#1a7a78"/>
-                <polygon points="32,55 60,18 88,80 32,80" fill="white"/>
+                <polygon points="50,4 96,86 4,86" fill="#1a7a78"/>
+                <polygon points="50,13 78,67 22,67" fill="white"/>
+                <polygon points="22,67 68,48 96,86 4,86" fill="#1a7a78"/>
               </svg>
             </div>
             <div><p style={{color:"#0f172a",fontSize:13,fontWeight:700,margin:0}}>SASOC Merch</p><p style={{color:"#94a3b8",fontSize:10,margin:0}}>CRM Empresarial</p></div>
