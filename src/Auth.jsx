@@ -27,13 +27,13 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#0b1120",
+      minHeight: "100vh", background: "#f8fafc",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'DM Sans', system-ui, sans-serif", padding: 20,
+      fontFamily: "'Inter', system-ui, sans-serif", padding: 20,
       position: "relative", overflow: "hidden",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
         @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
         .login-input { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px 14px; color:#e2e8f0; font-size:14px; width:100%; box-sizing:border-box; font-family:inherit; outline:none; transition:border-color .15s; }
@@ -47,8 +47,8 @@ function LoginScreen({ onLogin }) {
 
       {/* Background decoration */}
       <div style={{ position:"absolute", inset:0, overflow:"hidden", pointerEvents:"none" }}>
-        <div style={{ position:"absolute", top:-200, right:-200, width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(16,185,129,.08) 0%, transparent 70%)" }}/>
-        <div style={{ position:"absolute", bottom:-300, left:-200, width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(59,130,246,.05) 0%, transparent 70%)" }}/>
+        <div style={{ position:"absolute", top:-200, right:-200, width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(16,185,129,.06) 0%, transparent 70%)" }}/>
+        <div style={{ position:"absolute", bottom:-300, left:-200, width:700, height:700, borderRadius:"50%", background:"radial-gradient(circle, rgba(59,130,246,.04) 0%, transparent 70%)" }}/>
         <div style={{ position:"absolute", top:"30%", left:"10%", width:2, height:2, borderRadius:"50%", background:"#10b981", animation:"pulse 2s infinite", boxShadow:"0 0 20px #10b981" }}/>
         <div style={{ position:"absolute", top:"60%", right:"15%", width:2, height:2, borderRadius:"50%", background:"#3b82f6", animation:"pulse 3s infinite", boxShadow:"0 0 15px #3b82f6" }}/>
       </div>
