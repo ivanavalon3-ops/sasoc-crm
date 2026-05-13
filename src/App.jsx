@@ -1987,14 +1987,19 @@ export default function App({user=null, onLogout=null}){
       <div style={{width:215,background:"#ffffff",borderRight:"1px solid rgba(255,255,255,.07)",display:"flex",flexDirection:"column",flexShrink:0,minHeight:"100vh"}}>
         <div style={{padding:"18px 14px 14px",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:34,height:34,borderRadius:9,background:"linear-gradient(135deg,#059669,#10b981)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:16}}>S</div>
+            <div style={{width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%"}}>
+                <polygon points="50,3 97,87 3,87" fill="#1a7a78"/>
+                <polygon points="32,55 60,18 88,80 32,80" fill="white"/>
+              </svg>
+            </div>
             <div><p style={{color:"#0f172a",fontSize:13,fontWeight:700,margin:0}}>SASOC Merch</p><p style={{color:"#94a3b8",fontSize:10,margin:0}}>CRM Empresarial</p></div>
           </div>
         </div>
         <nav style={{flex:1,padding:"10px 8px",overflowY:"auto"}}>
           {NAV.map(item=>(
             <div key={item.id}>
-              {item.sec&&<p style={{fontSize:9,color:"#dbeafe",textTransform:"uppercase",letterSpacing:"0.9px",padding:"10px 10px 3px",fontWeight:700,margin:0}}>{item.sec}</p>}
+              {item.sec&&<p style={{fontSize:10,color:"#1a7a78",textTransform:"uppercase",letterSpacing:"0.9px",padding:"10px 10px 3px",fontWeight:700,margin:0}}>{item.sec}</p>}
               <button onClick={()=>setPage(item.id)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"8px 10px",borderRadius:8,border:"none",background:page===item.id?"#d1fae5":"transparent",color:page===item.id?"#059669":"#6b7280",fontSize:13,cursor:"pointer",textAlign:"left",fontWeight:page===item.id?700:400,fontFamily:"inherit",transition:"all .12s"}}>
                 <span style={{fontSize:14}}>{item.icon}</span>{item.label}
               </button>
